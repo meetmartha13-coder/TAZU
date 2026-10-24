@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TAZU Cloud Connection Check</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:760px;margin:36px auto;padding:0 18px;color:#17212b}h1{color:#0c6b52}.panel{padding:18px;border:1px solid #d5dedb;border-radius:14px;margin:14px 0}.status{font-weight:700}.ok{color:#087443}.bad{color:#b42318}button{background:#087f5b;color:white;border:0;border-radius:9px;padding:12px 16px;font-weight:700;cursor:pointer}code{overflow-wrap:anywhere}</style></head>
+<body><h1>TAZU — Cloud connection check</h1><p>This page tests whether your browser can reach your Supabase project. It does not create or modify records.</p>
+<div class="panel"><div>Project: <code>https://memypeagvjlwkxhtnzsg.supabase.co</code></div><p id="status" class="status">Checking connection…</p><div id="details"></div><button id="retry">Check again</button></div>
+<div class="panel"><strong>If the test reports a database/API error</strong><ul><li>Run <code>supabase/schema.sql</code> in Supabase Dashboard → SQL Editor.</li><li>Ensure the <code>rides</code> table exists and Row Level Security policies are configured.</li><li>Confirm Realtime is enabled for the <code>rides</code> table.</li></ul></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="tazu-config.js"></script>
+<script>
+const statusEl=document.getElementById('status'), details=document.getElementById('details');
+async function check(){statusEl.className='status';statusEl.textContent='Checking connection…';details.textContent='';
+ try { if(!window.supabase?.createClient) throw new Error('Supabase JS library did not load. Check internet access.');
+ const cfg=window.TAZU_SUPABASE_CONFIG;if(!cfg?.url||!cfg?.publishableKey)throw new Error('Missing project URL or publishable key.');
+ const client=window.supabase.createClient(cfg.url,cfg.publishableKey);
+ const {data,error}=await client.from('rides').select('id').limit(1);
+ if(error){statusEl.className='status bad';statusEl.textContent='Project reached, but database query failed.';details.textContent=error.message+' (code: '+(error.code||'n/a')+'). If the table is missing, apply schema.sql. If permission is denied, review RLS policies.';return;}
+ statusEl.className='status ok';statusEl.textContent='Connected — Supabase responded successfully.';details.textContent='The rides table is reachable. This verifies connectivity only; authentication, realtime subscriptions, and ride workflows still need separate testing.';
+ } catch(e){statusEl.className='status bad';statusEl.textContent='Connection check failed.';details.textContent=e.message||String(e);}}
+document.getElementById('retry').addEventListener('click',check);check();
+</script></body></html>
