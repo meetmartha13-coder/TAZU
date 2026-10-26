@@ -71,6 +71,22 @@
       if (error) throw error;
       return data;
     },
+    async acceptRide(rideId) {
+      const user = await this.currentUser();
+      if (!user) throw new Error('Sign in as a driver first.');
+      const c = requireClient();
+      const { data, error } = await c.from('rides').update({ driver_id: user.id, status: 'accepted' }).eq('id', rideId).eq('status', 'requested').is('driver_id', null).select().single();
+      if (error) throw error;
+      if (!data) throw new Error('This ride was already accepted or is no longer available.');
+      return data;
+    },
+    async driverRides() {
+      const user = await this.currentUser();
+      if (!user) throw new Error('Sign in as a driver first.');
+      const { data, error } = await requireClient().from('rides').select('*').eq('driver_id', user.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
     async subscribeToRides(onChange) {
       const c = requireClient();
       if (state.channel) await c.removeChannel(state.channel);
