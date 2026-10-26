@@ -34,9 +34,13 @@
       if (error) throw error;
     },
     async currentUser() {
-      const { data, error } = await requireClient().auth.getUser();
+      const c = requireClient();
+      const { data: sessionData, error: sessionError } = await c.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) return null;
+      const { data, error } = await c.auth.getUser();
       if (error) throw error;
-      return data.user;
+      return data.user || null;
     },
     async requestRide(input) {
       const c = requireClient();
