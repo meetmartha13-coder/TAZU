@@ -75,9 +75,9 @@
       const user = await this.currentUser();
       if (!user) throw new Error('Sign in as a driver first.');
       const c = requireClient();
-      const { data, error } = await c.from('rides').update({ driver_id: user.id, status: 'accepted' }).eq('id', rideId).eq('status', 'requested').is('driver_id', null).select().single();
+      const { data, error } = await c.from('rides').update({ driver_id: user.id, status: 'accepted' }).eq('id', rideId).eq('status', 'requested').is('driver_id', null).select().maybeSingle();
       if (error) throw error;
-      if (!data) throw new Error('This ride was already accepted or is no longer available.');
+      if (!data) throw new Error('Supabase did not return an updated ride. The request may already be taken, or the rides UPDATE policy may be blocking driver acceptance. Check the Supabase policy for authenticated users accepting requested rides.');
       return data;
     },
     async driverRides() {
