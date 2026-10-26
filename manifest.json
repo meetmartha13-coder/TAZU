@@ -1,0 +1,11 @@
+{
+  "name": "TAZU — Ride. Pay. Move Forward.",
+  "short_name": "TAZU",
+  "description": "TAZU ride-hailing prototype",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#087443",
+  "icons": []
+}
