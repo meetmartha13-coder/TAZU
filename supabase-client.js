@@ -80,6 +80,21 @@
       if (!data) throw new Error('Supabase did not return an updated ride. The request may already be taken, or the rides UPDATE policy may be blocking driver acceptance. Check the Supabase policy for authenticated users accepting requested rides.');
       return data;
     },
+    async updateRideStatus(rideId, nextStatus) {
+      const allowed = { accepted: ['in_progress', 'cancelled'], in_progress: ['completed'] };
+      if (!['in_progress', 'completed', 'cancelled'].includes(nextStatus)) throw new Error('Unsupported ride status.');
+      const user = await this.currentUser();
+      if (!user) throw new Error('Sign in as a driver first.');
+      const c = requireClient();
+      const { data: current, error: readError } = await c.from('rides').select('id,status,driver_id').eq('id', rideId).eq('driver_id', user.id).maybeSingle();
+      if (readError) throw readError;
+      if (!current) throw new Error('This ride is not assigned to your account.');
+      if (!(allowed[current.status] || []).includes(nextStatus)) throw new Error('This status change is not allowed from ' + current.status + '.');
+      const { data, error } = await c.from('rides').update({ status: nextStatus }).eq('id', rideId).eq('driver_id', user.id).eq('status', current.status).select().maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('Ride status was not updated. It may have changed already or Supabase permissions may be blocking this action.');
+      return data;
+    },
     async driverRides() {
       const user = await this.currentUser();
       if (!user) throw new Error('Sign in as a driver first.');
