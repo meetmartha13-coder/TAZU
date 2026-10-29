@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     // Never replace a still-pending reference: a delayed card/bank-transfer success
     // could otherwise arrive for an older reference after the ride has a new one.
-    if (ride.payment_status === "pending" && ride.payment_reference) {
+    if (["pending", "failed"].includes(String(ride.payment_status)) && ride.payment_reference) {
       const check = await fetch("https://api.paystack.co/transaction/verify/" + encodeURIComponent(ride.payment_reference), {
         headers: { Authorization: "Bearer " + secret }
       });
@@ -72,16 +72,31 @@ Deno.serve(async (req) => {
         if (paidErr) throw paidErr;
         return reply({ already_paid: true, payment_status: "paid", ride_id: ride.id, reference: ride.payment_reference });
       } else if (check.ok && verified?.status && ["failed", "abandoned"].includes(String(tx?.status))) {
-        const { data: failed, error: failedErr } = await admin.from("rides").update({ payment_status: "failed" })
-          .eq("id", ride.id).eq("payment_reference", ride.payment_reference).eq("payment_status", "pending")
-          .select("id").maybeSingle();
-        if (failedErr) throw failedErr;
-        if (!failed) return reply({ error: "Payment status changed while checking. Refresh the ride and try again.", payment_status: ride.payment_status }, 409);
+        if (ride.payment_status === "pending") {
+          const { data: failed, error: failedErr } = await admin.from("rides").update({ payment_status: "failed" })
+            .eq("id", ride.id).eq("payment_reference", ride.payment_reference).eq("payment_status", "pending")
+            .select("id").maybeSingle();
+          if (failedErr) throw failedErr;
+          if (!failed) return reply({ error: "Payment status changed while checking. Refresh the ride and try again.", payment_status: ride.payment_status }, 409);
+        }
         ride.payment_status = "failed";
-      } else if (check.status === 404) {
+      } else if (check.status === 404 && ride.payment_status === "pending") {
         // The database reference may have been saved just before a network interruption.
         // Re-initialize only with that same reference, never a new one.
         retryReference = ride.payment_reference;
+      } else if (check.status === 404 && ride.payment_status === "failed") {
+        // The old failed reference has no transaction; a fresh reference is safe.
+      } else if (["ongoing", "pending", "processing"].includes(String(tx?.status))) {
+        // Paystack still has an active transaction even if a prior request recorded failed.
+        if (ride.payment_status !== "pending") {
+          const { error: pendingErr } = await admin.from("rides").update({ payment_status: "pending" })
+            .eq("id", ride.id).eq("payment_reference", ride.payment_reference).neq("payment_status", "paid");
+          if (pendingErr) throw pendingErr;
+        }
+        return reply({
+          error: "A payment attempt is still pending with Paystack. Check its status before starting another payment.",
+          payment_status: "pending"
+        }, 409);
       } else {
         return reply({
           error: "A payment attempt is still pending with Paystack. Check its status before starting another payment.",
@@ -113,6 +128,11 @@ Deno.serve(async (req) => {
     });
     const result = await pay.json().catch(() => ({}));
     if (!pay.ok || !result?.status || !result.data?.authorization_url) {
+      if (retryReference) {
+        // Reusing a saved reference can return a duplicate-reference response if Paystack
+        // already has the transaction. Keep it pending until verification resolves it.
+        return reply({ error: "Could not safely resume the existing payment. Its status remains pending; check again before retrying." }, 409);
+      }
       const { data: failed, error: failErr } = await admin.from("rides").update({ payment_status: "failed" })
         .eq("id", ride.id).eq("payment_reference", reference).eq("payment_status", "pending")
         .select("id").maybeSingle();
