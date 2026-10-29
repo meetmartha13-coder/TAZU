@@ -25,7 +25,7 @@
 </div>
 <label class="field" for="pickup">PICKUP LOCATION</label><div class="inputwrap"><span class="dot"></span><input id="pickup" value="Victoria Island, Lagos" autocomplete="street-address"></div><label class="field" for="destination">DESTINATION</label><div class="inputwrap"><span class="dot red"></span><input id="destination" value="Lekki Phase 1, Lagos" autocomplete="street-address"></div><button class="btn secondary" onclick="useMyLocation()">◎ Use my current location</button>
 <h2 style="margin-top:18px">Choose your ride</h2><div class="ridecards"><button class="ridecard selected" id="economy" onclick="chooseRide('economy')"><strong>🚗 Economy</strong><span>Everyday rides</span><b id="economyPrice">₦2,500</b></button><button class="ridecard" id="comfort" onclick="chooseRide('comfort')"><strong>🚘 Comfort</strong><span>Extra comfort</span><b id="comfortPrice">₦3,200</b></button><button class="ridecard" id="suv" onclick="chooseRide('suv')"><strong>🚙 SUV</strong><span>More space</span><b id="suvPrice">₦4,500</b></button></div>
-<label class="field" for="payment">PAYMENT METHOD</label><div class="inputwrap"><span>▣</span><select id="payment"><option value="card">Bank card (online setup required)</option><option value="bank_transfer">Bank transfer (online setup required)</option></select></div>
+<label class="field" for="payment">PAYMENT METHOD</label><div class="inputwrap"><span>▣</span><select id="payment"><option value="card">Bank card (Paystack setup required)</option><option value="bank_transfer">Bank transfer (Paystack setup required)</option></select></div>
 <div class="receipt"><div class="line"><span>Estimated fare</span><strong id="fareLine">₦2,500</strong></div><div class="line"><span>Payment</span><span id="paymentLabel">Bank card (online)</span></div><div class="line total"><span>Cashless trip total</span><strong class="green" id="totalLine">₦2,500</strong></div></div>
 <button class="btn" onclick="bookRide()">Find a TAZU driver →</button><div class="safety"><span>✓ Verified drivers</span><span>✓ Trip sharing</span><span>✓ Digital receipt</span></div><div id="rideStatus" class="notice hidden"></div><button class="btn hidden" id="payRideButton" onclick="payForCurrentRide()">Pay for this ride securely →</button><div id="passengerTripPanel" class="receipt hidden"><h2>Your trip status</h2><div id="passengerTripStatus">Waiting for a driver</div><div id="passengerTripDetails" class="line"></div></div></div>
 <div id="driverView" class="hidden">
@@ -42,14 +42,14 @@
 <h3 style="margin:14px 0 6px">My accepted rides</h3><div id="cloudDriverActiveRides" class="history"><div class="historyitem"><span>Sign in and refresh to see assigned rides.</span></div></div>
 </div>
 <div class="status" id="driverOnlineStatus">Driver is offline</div><div class="section"><h2>Ride requests</h2><div id="driverRequests" class="history"><div class="historyitem"><span>No new requests yet</span><span>Waiting</span></div></div></div><div class="section"><h2>Current trip</h2><div id="driverCurrentTrip" class="notice">No active trip. Passenger bookings from another TAZU tab on this browser will appear here.</div><div id="driverTripActions"></div></div><div class="driverstat" style="margin-top:13px"><div class="stat"><small>Today's earnings</small><strong id="todayEarnings">₦4,250</strong></div><div class="stat"><small>Available balance (demo)</small><strong id="balance">₦8,750</strong></div></div><label class="field" for="commission">TAZU commission</label><div class="inputwrap"><select id="commission" onchange="updateDeduction()"><option value="10">10% commission</option><option value="15" selected>15% commission</option><option value="20">20% commission</option></select></div><label class="field" for="testFare">SAMPLE TRIP FARE</label><div class="inputwrap"><span>₦</span><input type="number" id="testFare" value="5000" min="0" step="50" oninput="updateDeduction()"></div><div class="receipt"><h2>Deductible mode</h2><div class="line"><span>Passenger fare</span><strong id="gross">₦5,000</strong></div><div class="line"><span>TAZU commission (<span id="rate">15</span>%)</span><strong id="deduct" style="color:#b34436">−₦750</strong></div><div class="line"><span>Other deductions</span><strong>₦0</strong></div><div class="line total"><span>Driver receives</span><strong class="green" id="net">₦4,250</strong></div><small style="color:var(--muted)">Illustrative calculation only. No real funds move in this prototype.</small></div><button class="btn" id="onlineToggle" onclick="toggleOnline()">Go online</button><button class="btn secondary" onclick="showToast('Payout setup is a demo. A verified payment-provider account is required for real transfers.')">Set up online payouts</button><div class="section"><h2>Recent transactions</h2><div class="history" id="transactions"><div class="historyitem"><span>Trip earnings · Sample trip</span><strong class="green">+₦4,250</strong></div><div class="historyitem"><span>TAZU commission · 15%</span><strong>−₦750</strong></div><div class="historyitem"><span>Bank payout · Demo</span><strong>₦7,000</strong></div></div></div></div>
-<div class="notice">Prototype notice: bookings, payments, driver matching and payouts are simulated. Do not enter real card or bank details.</div>
+<div class="notice">Prototype notice: Paystack checkout works only when the Supabase payment functions, webhook and test configuration are deployed. Driver matching and payouts remain partly simulated. Do not use real payment details until end-to-end tests are complete.</div>
 </section>
 <section class="panel mapbox"><div class="maphead"><div><h2 style="margin:0">Live ride map</h2><small id="mapCaption">Lagos, Nigeria · illustrative route</small></div><span class="status">Map preview</span></div><div id="map" role="application" aria-label="Map showing illustrative pickup and destination route"></div><div class="mapfoot"><span>📍 Pickup: Victoria Island</span><span>🏁 Lekki Phase 1</span><strong id="distance">~8.4 km</strong></div></section>
 </main><div class="footer">TAZU prototype · Built to demonstrate the passenger flow, driver dashboard and transparent deductions.<br>Map tiles and geolocation require an internet connection and browser permission.</div></div><div id="toast" class="toast hidden" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="./tazu-config.js"></script><script src="./supabase-client.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-const money=n=>'₦'+Math.round(Number(n)||0).toLocaleString('en-NG');let rideType='economy',mode='passenger',online=false,tripCount=0;let farePrices={economy:2500,comfort:3200,suv:4500};let map,routeLine,pickMarker,destMarker;
+const money=n=>'₦'+Math.round(Number(n)||0).toLocaleString('en-NG');let rideType='economy',mode='passenger',online=false,tripCount=0,lastPaymentVerifyAt=0;let farePrices={economy:2500,comfort:3200,suv:4500};let map,routeLine,pickMarker,destMarker;
 // Milestone 2: local demo dispatch and trip ledger. This syncs tabs on the same browser only.
 const STORE_KEY='tazu_milestone2_state';let tazuState={trips:[],ledger:[]};
 try{tazuState=JSON.parse(localStorage.getItem(STORE_KEY))||tazuState}catch(e){}
@@ -84,12 +84,96 @@ function driverAccountMessage(msg,bad=false){const e=document.getElementById('dr
 async function loadCloudDriverRides(){if(driverRefreshBusy)return;driverRefreshBusy=true;const box=document.getElementById('cloudDriverRequests'),activeBox=document.getElementById('cloudDriverActiveRides');try{if(!tazuCloudReady)throw new Error('Account service is not connected. Refresh the page.');const user=await TAZUCloud.currentUser();if(!user){driverAccountMessage('Sign in with your driver account first.',true);return}const [rides,assigned]=await Promise.all([TAZUCloud.pendingRides(),TAZUCloud.driverRides()]);box.innerHTML=rides.length?rides.map(r=>'<div class="historyitem"><div><strong>'+escapeText(r.pickup_label)+' → '+escapeText(r.destination_label)+'</strong><br><span>'+escapeText(r.ride_type||'Ride')+' · '+money(r.estimated_fare_ngn)+'</span></div><button class="btn" style="width:auto;margin:0;padding:8px 10px" onclick="acceptCloudRide(\''+String(r.id).replace(/[^a-zA-Z0-9-]/g,'')+'\')">Accept</button></div>').join(''):'<div class="historyitem"><span>No available requests returned.</span></div>';const active=assigned.filter(r=>['accepted','in_progress'].includes(r.status));activeBox.innerHTML=active.length?active.map(r=>{const next=r.status==='accepted'?'in_progress':'completed',label=r.status==='accepted'?'Start trip':'Complete trip';return '<div class="historyitem"><div><strong>'+escapeText(r.pickup_label)+' → '+escapeText(r.destination_label)+'</strong><br><span>'+escapeText(r.status)+' · '+money(r.estimated_fare_ngn)+'</span></div><button class="btn" style="width:auto;margin:0;padding:8px 10px" onclick="advanceCloudRide(\''+String(r.id).replace(/[^a-zA-Z0-9-]/g,'')+'\',\''+next+'\')">'+label+'</button></div>'}).join(''):'<div class="historyitem"><span>No accepted or active cloud rides.</span></div>';driverAccountMessage('Updated just now · '+rides.length+' available request(s), '+active.length+' active ride(s).')}catch(err){box.textContent='Could not load live requests: '+(err.message||'Unknown error');driverAccountMessage('Could not load cloud rides: '+(err.message||'Check Supabase permissions.'),true)}finally{driverRefreshBusy=false}}
 async function acceptCloudRide(id){try{const ride=await TAZUCloud.acceptRide(id);driverAccountMessage('Ride accepted in Supabase. Reference: '+ride.id);await loadCloudDriverRides()}catch(err){driverAccountMessage('Could not accept ride: '+(err.message||'Unknown error'),true)}}
 async function advanceCloudRide(id,nextStatus){try{const ride=await TAZUCloud.updateRideStatus(id,nextStatus);driverAccountMessage('Ride status updated to '+ride.status+'.');await loadCloudDriverRides()}catch(err){driverAccountMessage('Could not update ride: '+(err.message||'Unknown error'),true)}}
-async function refreshCloudPassengerRide(){if(!tazuCloudReady||cloudRideRefreshBusy)return;const rideId=window.localStorage.getItem('tazu_last_cloud_ride_id');if(!rideId)return;cloudRideRefreshBusy=true;try{const user=await TAZUCloud.currentUser();if(!user)return;const rides=await TAZUCloud.myRides();const ride=rides.find(r=>String(r.id)===String(rideId));if(!ride)return;const panel=document.getElementById('passengerTripPanel');panel.classList.remove('hidden');document.getElementById('passengerTripStatus').textContent=statusLabel(ride.status)+' · Payment: '+String(ride.payment_status||'unpaid').replace(/_/g,' ');const payBtn=document.getElementById('payRideButton');if(payBtn){const paid=ride.payment_status==='paid',cancelled=ride.status==='cancelled';payBtn.classList.toggle('hidden',paid||cancelled);payBtn.disabled=false;payBtn.textContent=paid?'Payment confirmed ✓':('Pay '+money(ride.estimated_fare_ngn)+' by '+(ride.payment_method==='bank_transfer'?'bank transfer':'card')+' →');if(new URLSearchParams(location.search).get('payment')==='return'&&paid){document.getElementById('rideStatus').textContent='Payment confirmed by Paystack. Your ride is marked paid.';}}document.getElementById('passengerTripDetails').innerHTML='<span>'+escapeText(ride.pickup_label)+' → '+escapeText(ride.destination_label)+'</span><strong>'+money(ride.estimated_fare_ngn)+'</strong>';const s=document.getElementById('rideStatus');s.classList.remove('hidden');s.textContent='Ride '+ride.status.replace(/_/g,' ')+'. Reference: '+ride.id+'.';}catch(err){console.warn('Could not refresh passenger ride status:',err.message)}finally{cloudRideRefreshBusy=false}}
-async function payForCurrentRide(){const rideId=window.localStorage.getItem('tazu_last_cloud_ride_id');if(!rideId){showToast('Request a ride before paying.');return}if(!tazuCloudReady){showToast('Account service is not connected.');return}const button=document.getElementById('payRideButton');button.disabled=true;button.textContent='Connecting securely to Paystack…';try{const client=TAZUCloud.client();const {data,error}=await client.functions.invoke('paystack-initialize',{body:{ride_id:rideId}});if(error)throw error;if(!data||!data.authorization_url)throw new Error(data?.error||'Payment link was not returned.');window.location.assign(data.authorization_url)}catch(err){showToast('Could not start payment: '+(err.message||'Check the payment setup.'));button.disabled=false;button.textContent='Try payment again →'}}
+async function refreshCloudPassengerRide(){
+ if(!tazuCloudReady||cloudRideRefreshBusy)return;
+ const rideId=window.localStorage.getItem('tazu_last_cloud_ride_id');
+ if(!rideId)return;
+ cloudRideRefreshBusy=true;
+ try{
+  const user=await TAZUCloud.currentUser();
+  if(!user)return;
+  const rides=await TAZUCloud.myRides();
+  const ride=rides.find(r=>String(r.id)===String(rideId));
+  if(!ride)return;
+  const paymentStatus=String(ride.payment_status||'unpaid');
+  const panel=document.getElementById('passengerTripPanel');
+  panel.classList.remove('hidden');
+  document.getElementById('passengerTripStatus').textContent=statusLabel(ride.status)+' · Payment: '+paymentStatus.replace(/_/g,' ');
+  const payBtn=document.getElementById('payRideButton');
+  const cancelled=ride.status==='cancelled';
+  if(payBtn){
+   payBtn.classList.toggle('hidden',paymentStatus==='paid'||cancelled);
+   payBtn.disabled=false;
+   if(paymentStatus==='paid')payBtn.textContent='Payment confirmed ✓';
+   else if(paymentStatus==='pending')payBtn.textContent='Check payment status →';
+   else if(paymentStatus==='failed')payBtn.textContent='Retry payment →';
+   else payBtn.textContent='Pay '+money(ride.estimated_fare_ngn)+' by '+(ride.payment_method==='bank_transfer'?'bank transfer':'card')+' →';
+  }
+  const statusBox=document.getElementById('rideStatus');
+  statusBox.classList.remove('hidden');
+  if(cancelled&&paymentStatus==='paid'){
+   statusBox.textContent='This ride was cancelled, but Paystack confirmed the payment. A refund review is required. Do not pay again.';
+  }else if(new URLSearchParams(location.search).get('payment')==='return'&&paymentStatus==='paid'){
+   statusBox.textContent='Payment confirmed by Paystack. Your ride is marked paid.';
+  }else{
+   statusBox.textContent='Ride '+String(ride.status||'requested').replace(/_/g,' ')+'. Payment: '+paymentStatus.replace(/_/g,' ')+'. Reference: '+ride.id+'.';
+  }
+  document.getElementById('passengerTripDetails').innerHTML='<span>'+escapeText(ride.pickup_label)+' → '+escapeText(ride.destination_label)+'</span><strong>'+money(ride.estimated_fare_ngn)+'</strong>';
+ }catch(err){console.warn('Could not refresh passenger ride status:',err.message)}
+ finally{cloudRideRefreshBusy=false}
+}
+async function verifyCurrentRidePayment(){
+ const rideId=window.localStorage.getItem('tazu_last_cloud_ride_id');
+ if(!rideId||!tazuCloudReady)return null;
+ try{
+  const {data,error}=await TAZUCloud.client().functions.invoke('paystack-verify',{body:{ride_id:rideId}});
+  if(error)throw error;
+  await refreshCloudPassengerRide();
+  if(data?.payment_status==='paid')showToast('Paystack confirmed the payment.');
+  else if(data?.payment_status==='failed')showToast('Paystack says this attempt did not complete. You can retry.');
+  return data||null;
+ }catch(err){
+  console.warn('Could not verify payment with Paystack:',err.message);
+  return null;
+ }
+}
+async function payForCurrentRide(){
+ const rideId=window.localStorage.getItem('tazu_last_cloud_ride_id');
+ if(!rideId){showToast('Request a ride before paying.');return}
+ if(!tazuCloudReady){showToast('Account service is not connected.');return}
+ const button=document.getElementById('payRideButton');
+ button.disabled=true;
+ button.textContent='Checking payment status…';
+ try{
+  const rides=await TAZUCloud.myRides();
+  const ride=rides.find(r=>String(r.id)===String(rideId));
+  if(!ride)throw new Error('Ride not found for this signed-in account.');
+  if(ride.status==='cancelled'){await refreshCloudPassengerRide();showToast('This ride was cancelled. Do not pay for it.');return}
+  if(ride.payment_status==='paid'){await refreshCloudPassengerRide();showToast('This ride is already paid.');return}
+  if(ride.payment_status==='pending'&&ride.payment_reference){
+   const verification=await TAZUCloud.client().functions.invoke('paystack-verify',{body:{ride_id:rideId}});
+   if(verification.error)throw verification.error;
+   if(verification.data?.payment_status==='paid'){await refreshCloudPassengerRide();showToast('Payment confirmed by Paystack.');return}
+   if(verification.data?.payment_status==='pending'){await refreshCloudPassengerRide();showToast('Payment is still pending. Do not start another payment yet.');return}
+   if(verification.data?.payment_status!=='failed'){await refreshCloudPassengerRide();showToast('Paystack has not confirmed a final result. Please check again shortly.');return}
+  }
+  button.textContent='Connecting securely to Paystack…';
+  const {data,error}=await TAZUCloud.client().functions.invoke('paystack-initialize',{body:{ride_id:rideId}});
+  if(error)throw error;
+  if(data?.already_paid||data?.payment_status==='paid'){await refreshCloudPassengerRide();showToast('Payment already confirmed by Paystack.');return}
+  if(!data||!data.authorization_url)throw new Error(data?.error||'Payment link was not returned.');
+  window.location.assign(data.authorization_url);
+ }catch(err){
+  showToast('Could not continue payment: '+(err.message||'Check payment setup.'));
+ }finally{
+  button.disabled=false;
+  await refreshCloudPassengerRide();
+ }
+}
 async function bookRide(){const p=document.getElementById('pickup').value.trim(),d=document.getElementById('destination').value.trim();if(!p||!d){showToast('Enter both pickup and destination first.');return}if(!tazuCloudReady){showToast('Account service is not connected. Refresh and try again.');return}const s=document.getElementById('rideStatus');try{const user=await TAZUCloud.currentUser();if(!user){setAccountStatus('Please create an account or sign in before booking.',true);document.getElementById('accountEmail').focus();showToast('Sign in before requesting a ride.');return}const payment=document.getElementById('payment').value;const trip=await TAZUCloud.requestRide({pickup:p,destination:d,rideType:rideType,fare:farePrices[rideType],paymentMethod:payment,commissionRate:15});window.localStorage.setItem('tazu_last_cloud_ride_id',trip.id);s.classList.remove('hidden');s.textContent='Ride request saved to TAZU. Reference: '+trip.id+'. Waiting for a driver. Choose Pay when you are ready to pay.';const payBtn=document.getElementById('payRideButton');payBtn.classList.remove('hidden');payBtn.textContent='Pay '+money(farePrices[rideType])+' by '+(payment==='bank_transfer'?'bank transfer':'card')+' →';await refreshCloudPassengerRide();showToast('Ride request saved successfully.');}catch(err){s.classList.remove('hidden');s.textContent='Could not save ride request: '+(err.message||'Unknown error');showToast('Ride request failed. Check the message on screen.')}}
 function updateDeduction(){const f=Math.max(0,Number(document.getElementById('testFare').value)||0),r=Number(document.getElementById('commission').value),ded=f*r/100;document.getElementById('gross').textContent=money(f);document.getElementById('rate').textContent=r;document.getElementById('deduct').textContent='−'+money(ded);document.getElementById('net').textContent=money(f-ded)}
 function toggleOnline(){online=!online;const b=document.getElementById('onlineToggle');b.textContent=online?'Go offline':'Go online';document.getElementById('driverOnlineStatus').textContent=online?'Driver is online (demo)':'Driver is offline';persistState();showToast(online?'Driver is online in this browser demo and can accept pending requests.':'Driver set to offline.')}
 function useMyLocation(){if(!navigator.geolocation){showToast('This browser does not support geolocation.');return}showToast('Requesting location permission…');navigator.geolocation.getCurrentPosition(pos=>{const lat=pos.coords.latitude,lng=pos.coords.longitude;map.setView([lat,lng],15);if(pickMarker)pickMarker.setLatLng([lat,lng]);else pickMarker=L.marker([lat,lng]).addTo(map).bindPopup('Your current location');document.getElementById('pickup').value='My current location';document.getElementById('mapCaption').textContent='Your current location · destination remains illustrative';showToast('Current location found. The destination route is still a demo.')},()=>showToast('Could not get location. Allow location permission or type your pickup address.'),{enableHighAccuracy:true,timeout:10000})}
 function initMap(){if(!window.L){document.getElementById('map').innerHTML='<div style="padding:30px">Map library could not load. Connect to the internet and refresh.</div>';return}map=L.map('map').setView([6.435,3.485],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const a=[6.4281,3.4219],b=[6.4474,3.4721],c=[6.4698,3.5852];pickMarker=L.marker(a).addTo(map).bindPopup('Pickup · Victoria Island');destMarker=L.marker(c).addTo(map).bindPopup('Destination · Lekki Phase 1');routeLine=L.polyline([a,b,c],{color:'#087443',weight:5,opacity:.9,dashArray:'8 8'}).addTo(map);map.fitBounds(routeLine.getBounds().pad(.18));L.circleMarker(b,{radius:7,color:'#fff',weight:3,fillColor:'#087443',fillOpacity:1}).addTo(map).bindPopup('Illustrative route waypoint')}
-window.addEventListener('load',()=>{initMap();updateDeduction();renderDispatch();renderLedger();refreshPassengerAuth();refreshCloudPassengerRide();setInterval(()=>{if(mode==='driver')loadCloudDriverRides();if(mode==='passenger')refreshCloudPassengerRide()},5000)});if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+window.addEventListener('load',()=>{initMap();updateDeduction();renderDispatch();renderLedger();refreshPassengerAuth();refreshCloudPassengerRide();if(new URLSearchParams(location.search).get('payment')==='return'){lastPaymentVerifyAt=Date.now();verifyCurrentRidePayment()}setInterval(()=>{if(mode==='driver')loadCloudDriverRides();if(mode==='passenger'){refreshCloudPassengerRide();if(new URLSearchParams(location.search).get('payment')==='return'&&Date.now()-lastPaymentVerifyAt>15000){lastPaymentVerifyAt=Date.now();verifyCurrentRidePayment()}}},5000)});if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script></body></html>
