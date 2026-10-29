@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
     const fare = Number(ride.estimated_fare_ngn);
     if (!Number.isInteger(fare) || fare <= 0) return reply({ error: "Invalid ride fare." }, 400);
     const expectedChannel = String(ride.payment_method);
+    let retryReference = "";
 
     // Never replace a still-pending reference: a delayed card/bank-transfer success
     // could otherwise arrive for an older reference after the ride has a new one.
@@ -70,15 +71,17 @@ Deno.serve(async (req) => {
           .eq("id", ride.id).eq("payment_reference", ride.payment_reference);
         if (paidErr) throw paidErr;
         return reply({ already_paid: true, payment_status: "paid", ride_id: ride.id, reference: ride.payment_reference });
-      }
-
-      if (check.ok && verified?.status && ["failed", "abandoned"].includes(String(tx?.status))) {
+      } else if (check.ok && verified?.status && ["failed", "abandoned"].includes(String(tx?.status))) {
         const { data: failed, error: failedErr } = await admin.from("rides").update({ payment_status: "failed" })
           .eq("id", ride.id).eq("payment_reference", ride.payment_reference).eq("payment_status", "pending")
           .select("id").maybeSingle();
         if (failedErr) throw failedErr;
         if (!failed) return reply({ error: "Payment status changed while checking. Refresh the ride and try again.", payment_status: ride.payment_status }, 409);
         ride.payment_status = "failed";
+      } else if (check.status === 404) {
+        // The database reference may have been saved just before a network interruption.
+        // Re-initialize only with that same reference, never a new one.
+        retryReference = ride.payment_reference;
       } else {
         return reply({
           error: "A payment attempt is still pending with Paystack. Check its status before starting another payment.",
@@ -87,7 +90,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const reference = "tazu_" + ride.id + "_" + crypto.randomUUID().replaceAll("-", "");
+    const reference = retryReference || ("tazu-" + ride.id + "-" + crypto.randomUUID().replaceAll("-", ""));
     let claim = admin.from("rides").update({ payment_status: "pending", payment_reference: reference }).eq("id", ride.id);
     claim = ride.payment_status == null ? claim.is("payment_status", null) : claim.eq("payment_status", ride.payment_status);
     claim = ride.payment_reference ? claim.eq("payment_reference", ride.payment_reference) : claim.is("payment_reference", null);
@@ -110,8 +113,11 @@ Deno.serve(async (req) => {
     });
     const result = await pay.json().catch(() => ({}));
     if (!pay.ok || !result?.status || !result.data?.authorization_url) {
-      await admin.from("rides").update({ payment_status: "failed" })
-        .eq("id", ride.id).eq("payment_reference", reference).eq("payment_status", "pending");
+      const { data: failed, error: failErr } = await admin.from("rides").update({ payment_status: "failed" })
+        .eq("id", ride.id).eq("payment_reference", reference).eq("payment_status", "pending")
+        .select("id").maybeSingle();
+      if (failErr) throw failErr;
+      if (!failed) return reply({ error: "Paystack initialization failed and the payment state changed. Refresh before retrying." }, 409);
       return reply({ error: result?.message || "Paystack initialization failed." }, 502);
     }
     return reply({ authorization_url: result.data.authorization_url, reference, ride_id: ride.id });
