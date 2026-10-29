@@ -76,13 +76,29 @@ Deno.serve(async (req) => {
     }
 
     if (["failed", "abandoned"].includes(String(p.status))) {
-      const { error: updateError } = await admin.from("rides").update({ payment_status: "failed" })
-        .eq("id", ride.id).eq("payment_reference", ride.payment_reference).eq("payment_status", "pending");
+      const { data: failed, error: updateError } = await admin.from("rides").update({ payment_status: "failed" })
+        .eq("id", ride.id).eq("payment_reference", ride.payment_reference).neq("payment_status", "paid")
+        .select("payment_status").maybeSingle();
       if (updateError) throw updateError;
+      if (!failed) {
+        const { data: latest, error: latestError } = await admin.from("rides").select("payment_status")
+          .eq("id", ride.id).eq("payment_reference", ride.payment_reference).maybeSingle();
+        if (latestError) throw latestError;
+        if (latest?.payment_status === "paid") return reply({ payment_status: "paid", ride_id: ride.id });
+      }
       return reply({ payment_status: "failed", ride_id: ride.id, message: "Paystack confirmed this payment attempt did not complete. You can try again." });
     }
 
-    return reply({ payment_status: ride.payment_status || "pending", ride_id: ride.id, message: "Payment is still pending. Do not start another attempt yet." });
+    if (["ongoing", "pending", "processing"].includes(String(p.status))) {
+      if (ride.payment_status !== "paid" && ride.payment_status !== "pending") {
+        const { error: pendingError } = await admin.from("rides").update({ payment_status: "pending" })
+          .eq("id", ride.id).eq("payment_reference", ride.payment_reference).neq("payment_status", "paid");
+        if (pendingError) throw pendingError;
+      }
+      return reply({ payment_status: "pending", ride_id: ride.id, message: "Payment is still pending. Do not start another attempt yet." });
+    }
+
+    return reply({ payment_status: "pending", ride_id: ride.id, message: "Paystack has not confirmed a final result. Do not start another attempt yet." });
   } catch (e) {
     return reply({ error: e instanceof Error ? e.message : "Unexpected verification error." }, 500);
   }
