@@ -47,7 +47,12 @@ Deno.serve(async (req) => {
     const verified = await res.json().catch(() => ({}));
     const p = verified?.data;
 
-    // A missing/unavailable verification response is not proof of failure.
+    // A missing reference can occur if the browser lost the initialize response.
+    // The initializer will retry using this same reference, avoiding duplicate references.
+    if (res.status === 404) {
+      return reply({ payment_status: "failed", retry_safe: true, message: "No transaction exists for this reference yet; a safe retry will reuse the same reference." });
+    }
+    // Other missing/unavailable responses are not proof of failure.
     if (!res.ok || !verified?.status || !p) {
       return reply({ payment_status: ride.payment_status || "pending", message: "Paystack has not confirmed a final result yet." });
     }
