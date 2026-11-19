@@ -61,7 +61,7 @@
         status: 'requested',
         payment_status: 'unpaid'
       };
-      if (!row.pickup_label || !row.destination_label || !Number.isFinite(row.estimated_fare_ngn) || row.estimated_fare_ngn < 0) throw new Error('Enter valid pickup, destination and fare.');
+      if (!row.pickup_label || !row.destination_label || !Number.isFinite(row.estimated_fare_ngn) || row.estimated_fare_ngn <= 0) throw new Error('Enter valid pickup, destination and fare.');
       const { data, error } = await c.from('rides').insert(row).select().single();
       if (error) throw error;
       return data;
@@ -102,11 +102,23 @@
       if (error) throw error;
       return data;
     },
-    async subscribeToRides(onChange) {
+    async subscribeToRides(onChange, onStatus) {
       const c = requireClient();
+      const user = await this.currentUser();
+      if (!user) throw new Error('Sign in to receive live ride updates.');
       if (state.channel) await c.removeChannel(state.channel);
-      state.channel = c.channel('tazu-rides-feed').on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, payload => onChange(payload)).subscribe();
-      return () => { if (state.channel) c.removeChannel(state.channel); state.channel = null; };
+      state.channel = c
+        .channel('tazu-rides-feed-' + user.id)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, payload => {
+          if (typeof onChange === 'function') onChange(payload);
+        })
+        .subscribe(status => {
+          if (typeof onStatus === 'function') onStatus(status);
+        });
+      return async () => {
+        if (state.channel) await c.removeChannel(state.channel);
+        state.channel = null;
+      };
     },
     async myRides() {
       const user = await this.currentUser();
