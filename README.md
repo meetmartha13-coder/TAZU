@@ -31,7 +31,7 @@ Payment integration source has been added under `supabase/functions/`. These fil
 
 1. In the Supabase SQL Editor, run [the payment-reference migration](https://github.com/meetmartha13-coder/TAZU/blob/main/supabase/migrations/202610280001_paystack_payment_reference.sql).
 2. In Supabase Edge Function Secrets, add `PAYSTACK_SECRET_KEY` using your Paystack **test secret key**. Never commit it to GitHub, put it in website JavaScript, or send it in chat.
-3. Deploy `paystack-initialize` and `paystack-webhook` from the source in `supabase/functions/`. The webhook must be deployed without Supabase JWT verification because Paystack calls it; the function verifies Paystack's HMAC signature itself.
+3. Deploy `paystack-initialize` and `paystack-webhook` from the source in `supabase/functions/`. The checked-in `supabase/config.toml` keeps JWT verification enabled for `paystack-initialize` and disables Supabase JWT verification only for `paystack-webhook`; the webhook verifies Paystack's HMAC signature itself.
 4. In Paystack dashboard, configure webhook URL: `https://memypeagvjlwkxhtnzsg.supabase.co/functions/v1/paystack-webhook`.
 5. Verify the `rides.payment_status` check constraint permits `unpaid`, `pending`, `paid`, and `failed`. If not, update the constraint before testing.
 6. Test card and bank transfer using Paystack test mode and confirm that the ride changes to `paid` only after the signed webhook and server-side transaction verification succeed.
@@ -47,7 +47,7 @@ supabase link --project-ref memypeagvjlwkxhtnzsg
 supabase db push
 supabase secrets set PAYSTACK_SECRET_KEY=sk_test_REPLACE_WITH_YOUR_TEST_SECRET
 supabase functions deploy paystack-initialize
-supabase functions deploy paystack-webhook --no-verify-jwt
+supabase functions deploy paystack-webhook
 ```
 
 Replace the example secret locally with your real test secret; do not literally use the placeholder. Supabase's project URL and service-role environment variables must remain server-side.
