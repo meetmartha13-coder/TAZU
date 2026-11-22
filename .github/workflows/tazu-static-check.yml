@@ -32,3 +32,15 @@ jobs:
           print(f"Extracted {len(scripts)} inline script(s)")
           PY
           for file in /tmp/tazu-inline-*.js; do node --check "$file"; done
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("tazebid/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)</script>", html, re.I)
+          if not scripts:
+              raise SystemExit("No TAZE BID inline application script found")
+          for i, script in enumerate(scripts):
+              Path(f"/tmp/tazebid-inline-{i}.js").write_text(script, encoding="utf-8")
+          print(f"Extracted {len(scripts)} TAZE BID inline script(s)")
+          PY
+          for file in /tmp/tazebid-inline-*.js; do node --check "$file"; done
