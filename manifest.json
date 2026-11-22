@@ -1,7 +1,7 @@
 {
   "name": "TAZU — Ride. Pay. Move Forward.",
   "short_name": "TAZU",
-  "description": "TAZU ride-hailing prototype",
+  "description": "TAZU ride-hailing service",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
