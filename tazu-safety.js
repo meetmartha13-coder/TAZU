@@ -6,6 +6,52 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function note(el,msg,bad){if(el){el.textContent=msg;el.style.color=bad?'#9b2c20':'#087443';}}
  async function user(){const u=await TAZUCloud.currentUser();if(!u)throw Error('Please sign in first.');return u;}
+
+ async function installAdmin(){
+  try{
+   const u=await user();
+   if(u.app_metadata?.role!=='admin'||$('tazuAdminPanel'))return;
+   const panel=document.createElement('section');panel.id='tazuAdminPanel';panel.className='panel';panel.style.margin='16px';
+   panel.innerHTML='<h2>TAZU administrator · Driver verification</h2><p class="sub">Review each required document. A driver is approved only after all five document types are approved.</p><button id="tazuAdminRefresh" class="btn secondary" type="button">Refresh submissions</button><div id="tazuAdminList" class="history"></div>';
+   document.querySelector('.app')?.insertBefore(panel,document.querySelector('.main'));
+   $('tazuAdminRefresh').addEventListener('click',loadAdminDocuments);
+   await loadAdminDocuments();
+  }catch(e){console.warn('TAZU admin panel unavailable:',e.message)}
+ }
+ async function loadAdminDocuments(){
+  const list=$('tazuAdminList');if(!list)return;
+  list.textContent='Loading driver submissions…';
+  try{
+   const {data,error}=await cloud().from('driver_verification').select('id,user_id,document_type,storage_path,review_status,submitted_at,review_note').order('submitted_at',{ascending:false});
+   if(error)throw error;
+   if(!data?.length){list.textContent='No driver documents have been submitted.';return}
+   list.innerHTML='';
+   for(const d of data){
+    const item=document.createElement('div');item.className='receipt';
+    const head=document.createElement('div');head.className='line';
+    const title=document.createElement('strong');title.textContent=d.document_type.replace(/_/g,' ');
+    const status=document.createElement('span');status.textContent=d.review_status;
+    head.append(title,status);item.append(head);
+    const who=document.createElement('small');who.textContent='Driver account: '+d.user_id+' · '+new Date(d.submitted_at).toLocaleString();item.append(who);
+    const {data:file,error:fileError}=await cloud().storage.from('tazu-driver-verification').createSignedUrl(d.storage_path,300);
+    if(!fileError&&file?.signedUrl){const a=document.createElement('a');a.href=file.signedUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Open document (5-minute link)';a.style.display='block';a.style.margin='8px 0';item.append(a)}
+    else{const warn=document.createElement('small');warn.textContent='Document preview unavailable: '+(fileError?.message||'unknown error');item.append(warn)}
+    if(d.review_status==='pending'){
+     const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='8px';
+     for(const [label,value] of [['Approve','approved'],['Reject','rejected']]){
+      const b=document.createElement('button');b.type='button';b.className='btn secondary';b.textContent=label;b.style.flex='1';
+      b.addEventListener('click',async()=>{
+       b.disabled=true;
+       try{const {data:approved,error}=await cloud().rpc('review_driver_verification',{p_document_id:d.id,p_status:value,p_note:null});if(error)throw error;note($('tazuAdminList'),value==='approved'?(approved?'All five document types approved. Driver is now approved.':'Document approved. More required documents must be approved before the driver can go online.'):'Document rejected. Driver remains unapproved.');await loadAdminDocuments()}
+       catch(e){note($('tazuAdminList'),e.message,true);b.disabled=false}
+      });actions.append(b)
+     }
+     item.append(actions)
+    }
+    list.append(item)
+   }
+  }catch(e){list.textContent='Administrator review unavailable: '+e.message}
+ }
  function install(){
   const driver=$('driverAvailabilityPanel');
   if(driver&&!$('tazuVerifyPanel')){
@@ -75,5 +121,5 @@
   }catch(e){$('tazuSharedDetails').textContent='Unable to load shared trip: '+e.message}}
   await refresh();setInterval(refresh,10000);
  }
- window.addEventListener('load',()=>{install();showSharedTrip();setInterval(()=>{if($('tazuVerifyPanel')&&!$('tazuVerifyList').dataset.loaded){$('tazuVerifyList').dataset.loaded='1';loadDocuments()}},1200)});
+ window.addEventListener('load',()=>{install();installAdmin();showSharedTrip();setInterval(()=>{if($('tazuVerifyPanel')&&!$('tazuVerifyList').dataset.loaded){$('tazuVerifyList').dataset.loaded='1';loadDocuments()}},1200)});
 })();
