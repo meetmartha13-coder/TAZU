@@ -99,8 +99,11 @@
    const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');
    const {error}=await cloud().rpc('create_trip_share',{p_ride_id:id,p_token:token});if(error)throw error;
    const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('share',token);
-   await navigator.clipboard.writeText(url.toString());
-   note($('tazuShareStatus'),'Secure trip link copied. It expires in 12 hours and can be revoked.');
+   const shareUrl=url.toString();
+   const status=$('tazuShareStatus');status.textContent='Your private trip link is ready. It expires in 12 hours. Share it only with someone you trust.';
+   const link=document.createElement('a');link.href=shareUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open trip-sharing link';link.style.display='block';link.style.margin='8px 0';status.appendChild(link);
+   const copy=document.createElement('button');copy.type='button';copy.className='btn secondary';copy.textContent='Copy trip link';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(shareUrl);copy.textContent='Link copied';}catch(e){note(status,'Copy was blocked by your browser. Use the trip link above to share it.',true);}});status.appendChild(copy);
+   try{await navigator.clipboard.writeText(shareUrl);copy.textContent='Link copied';}catch(e){/* Link remains visible for manual sharing. */}
    $('tazuRevokeShare').classList.remove('hidden');
   }catch(e){note($('tazuShareStatus'),e.message||'Could not create trip link.',true)}
   finally{b.disabled=false}
